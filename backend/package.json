@@ -1,7 +1,26 @@
-@@ .. @@
-   "scripts": {
-     "dev": "nodemon index.js",
--    "inngest-dev": "npx inngest-cli@latest dev"
-+    "inngest-dev": "npx inngest-cli@latest dev",
-+    "start": "node index.js"
-   },
+{
+  "name": "ai-ticket-backend",
+  "version": "1.0.0",
+  "description": "Backend for AI Ticket System",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon index.js",
+    "start": "node index.js",
+    "inngest-dev": "npx inngest-cli@latest dev"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^8.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "bcrypt": "^5.1.1",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.7",
+    "inngest": "^3.15.0",
+    "@google/generative-ai": "^0.2.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
