@@ -19,8 +19,10 @@ const app = express();
 
 // CORS configuration
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
-  credentials: true
+  origin: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
@@ -57,26 +59,41 @@ if (process.env.NODE_ENV === 'production') {
     res.json({ 
       message: "AI Ticket System API", 
       status: "Development Mode",
-      frontend: "http://localhost:5173"
+      frontend: "http://localhost:5173",
+      timestamp: new Date().toISOString()
     });
   });
 }
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Something went wrong!' });
+});
+
 // Connect to MongoDB and start server
-mongoose
-  .connect(process.env.MONGO_URI || "mongodb://localhost:27017/ai-tickets")
-  .then(() => {
-    console.log("Connected to MongoDB");
-    app.listen(PORT, () => {
+const startServer = async () => {
+  try {
+    if (process.env.MONGO_URI) {
+      await mongoose.connect(process.env.MONGO_URI);
+      console.log("✅ Connected to MongoDB");
+    } else {
+      console.log("⚠️  MongoDB URI not provided, running without database");
+    }
+    
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Backend server running on http://localhost:${PORT}`);
       console.log(`📱 Frontend dev server should run on http://localhost:5173`);
+      console.log(`🔗 API endpoints available at http://localhost:${PORT}/api`);
     });
-  })
-  .catch((error) => {
-    console.error("MongoDB connection error:", error);
+  } catch (error) {
+    console.error("❌ MongoDB connection error:", error);
     // Start server anyway for development
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`⚠️  Backend server running on http://localhost:${PORT} (MongoDB not connected)`);
       console.log(`📱 Frontend dev server should run on http://localhost:5173`);
     });
-  });
+  }
+};
+
+startServer();
