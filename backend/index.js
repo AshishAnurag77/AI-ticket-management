@@ -46,24 +46,23 @@ app.get("/api/health", (req, res) => {
 });
 
 // Serve static files from frontend build in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../frontend/dist')));
-  
-  // Catch all handler: send back React's index.html file for any non-API routes
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
-  });
-} else {
-  // Development mode - just show API status
-  app.get('/', (req, res) => {
+// Always serve static files from frontend build
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+// Catch all handler: send back React's index.html file for any non-API routes
+app.get('*', (req, res) => {
+  const indexPath = path.join(__dirname, '../frontend/dist/index.html');
+  if (require('fs').existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
     res.json({ 
       message: "AI Ticket System API", 
-      status: "Development Mode",
-      frontend: "http://localhost:5173",
+      status: "Frontend not built yet",
+      note: "Run 'npm run build' to build frontend",
       timestamp: new Date().toISOString()
     });
-  });
-}
+  }
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
