@@ -2,11 +2,6 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
-import userRoutes from "./routes/user.js";
-import ticketRoutes from "./routes/ticket.js";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,9 +9,15 @@ const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 3000;
 const app = express();
 
+// Simple in-memory storage
+let users = [];
+let tickets = [];
+let userIdCounter = 1;
+let ticketIdCounter = 1;
+
 // CORS configuration
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'],
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -24,56 +25,98 @@ app.use(cors({
 
 app.use(express.json());
 
-// API routes
-app.use("/api/auth", userRoutes);
-app.use("/api/tickets", ticketRoutes);
+// Simple auth routes
+app.post("/api/auth/signup", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // Check if user exists
+    const existingUser = users.find(u => u.email === email);
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    // Create user
+    const user = {
+      _id: userIdCounter++,
+      email,
+      password, // In real app, hash this
+      role: 'user',
+      skills: [],
+      createdAt: new Date()
+    };
+    users.push(user);
+
+    // Return success
+    res.status(201).json({
+      message: "User created successfully",
+      token: "fake-jwt-token",
+      user: { id: user._id, email: user.email, role: user.role }
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // Find user
+    const user = users.find(u => u.email === email && u.password === password);
+    if (!user) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // Return success
+    res.json({
+      message: "Login successful",
+      token: "fake-jwt-token",
+      user: { id: user._id, email: user.email, role: user.role }
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
 
 // Health check
 app.get("/api/health", (req, res) => {
-  res.json({ status: "OK", message: "Server is running", timestamp: new Date().toISOString() });
+  res.json({ 
+    status: "OK", 
+    message: "Server is running", 
+    timestamp: new Date().toISOString(),
+    users: users.length,
+    tickets: tickets.length
+  });
 });
 
 // Serve static files from frontend build
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
-// Catch all handler: send back React's index.html file for any non-API routes
+// Catch all handler
 app.get('*', (req, res) => {
   const indexPath = path.join(__dirname, '../frontend/dist/index.html');
-  try {
-    res.sendFile(indexPath);
-  } catch (error) {
-    res.json({ 
-      message: "AI Ticket System API", 
-      status: "Running",
-      timestamp: new Date().toISOString(),
-      routes: {
-        health: "/api/health",
-        auth: "/api/auth/*",
-        tickets: "/api/tickets/*"
-      }
-    });
-  }
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      res.json({ 
+        message: "AI Ticket System API", 
+        status: "Running",
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
 });
 
-// Error handling middleware
+// Error handling
 app.use((err, req, res, next) => {
-  console.error('Error:', err.stack);
+  console.error('Error:', err);
   res.status(500).json({ message: 'Something went wrong!', error: err.message });
 });
 
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Backend server running on http://localhost:${PORT}`);
-  console.log(`📱 Frontend should be accessible at http://localhost:${PORT}`);
-  console.log(`🔗 API endpoints available at http://localhost:${PORT}/api`);
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`✅ Health check: http://localhost:${PORT}/api/health`);
 });
 
-// Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err);
-});
-
-process.on('unhandledRejection', (err) => {
-  console.error('Unhandled Rejection:', err);
-});
+export default app;
