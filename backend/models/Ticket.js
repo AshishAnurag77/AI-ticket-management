@@ -1,6 +1,4 @@
-import mongoose from "mongoose";
-
-// Create a simple in-memory store for demo purposes
+// Simple in-memory store for demo purposes
 const tickets = [];
 let ticketIdCounter = 1;
 
@@ -9,6 +7,9 @@ const Ticket = {
   async create(ticketData) {
     const ticket = {
       _id: ticketIdCounter++,
+      status: 'open',
+      category: 'general',
+      priority: 'medium',
       ...ticketData,
       createdAt: new Date(),
       updatedAt: new Date()
@@ -22,11 +23,27 @@ const Ticket = {
     if (query.createdBy) {
       result = result.filter(ticket => ticket.createdBy == query.createdBy);
     }
-    return result;
+    return {
+      populate: (field, select) => ({
+        populate: (field2, select2) => ({
+          sort: (sortObj) => result
+        }),
+        sort: (sortObj) => result
+      }),
+      sort: (sortObj) => result
+    };
   },
   
   async findById(id) {
-    return tickets.find(ticket => ticket._id == id);
+    const ticket = tickets.find(ticket => ticket._id == id);
+    if (ticket) {
+      return {
+        populate: (field, select) => ({
+          populate: (field2, select2) => ticket
+        })
+      };
+    }
+    return null;
   },
   
   async findByIdAndUpdate(id, updates) {
@@ -40,44 +57,3 @@ const Ticket = {
 };
 
 export default Ticket;
-
-/* Original Mongoose schema - commented out for demo
-const ticketSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true,
-  },
-  description: {
-    type: String,
-    required: true,
-  },
-  category: {
-    type: String,
-    enum: ["technical", "billing", "general", "bug", "feature"],
-    default: "general",
-  },
-  priority: {
-    type: String,
-    enum: ["low", "medium", "high", "urgent"],
-    default: "medium",
-  },
-  status: {
-    type: String,
-    enum: ["open", "in-progress", "resolved", "closed"],
-    default: "open",
-  },
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-  },
-  assignedTo: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-  },
-  aiNotes: {
-    type: String,
-  },
-}, {
-  timestamps: true,
-});

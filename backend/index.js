@@ -1,5 +1,4 @@
 import express from "express";
-import mongoose from "mongoose";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -31,52 +30,50 @@ app.use("/api/tickets", ticketRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {
-  res.json({ status: "OK", message: "Server is running" });
+  res.json({ status: "OK", message: "Server is running", timestamp: new Date().toISOString() });
 });
 
-// Serve static files from frontend build in production
-// Always serve static files from frontend build
+// Serve static files from frontend build
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
 // Catch all handler: send back React's index.html file for any non-API routes
 app.get('*', (req, res) => {
   const indexPath = path.join(__dirname, '../frontend/dist/index.html');
-  if (require('fs').existsSync(indexPath)) {
+  try {
     res.sendFile(indexPath);
-  } else {
+  } catch (error) {
     res.json({ 
       message: "AI Ticket System API", 
-      status: "Frontend not built yet",
-      note: "Run 'npm run build' to build frontend",
-      timestamp: new Date().toISOString()
+      status: "Running",
+      timestamp: new Date().toISOString(),
+      routes: {
+        health: "/api/health",
+        auth: "/api/auth/*",
+        tickets: "/api/tickets/*"
+      }
     });
   }
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+  console.error('Error:', err.stack);
+  res.status(500).json({ message: 'Something went wrong!', error: err.message });
 });
 
-// Connect to MongoDB and start server
-const startServer = async () => {
-  try {
-    // For now, skip MongoDB connection to get the server running
-    console.log("⚠️  Running without database for demo purposes");
-    
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`🚀 Backend server running on http://localhost:${PORT}`);
-      console.log(`📱 Frontend dev server should run on http://localhost:5173`);
-      console.log(`🔗 API endpoints available at http://localhost:${PORT}/api`);
-    });
-  } catch (error) {
-    console.error("❌ Server startup error:", error);
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`⚠️  Backend server running on http://localhost:${PORT}`);
-      console.log(`📱 Frontend dev server should run on http://localhost:5173`);
-    });
-  }
-};
+// Start server
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Backend server running on http://localhost:${PORT}`);
+  console.log(`📱 Frontend should be accessible at http://localhost:${PORT}`);
+  console.log(`🔗 API endpoints available at http://localhost:${PORT}/api`);
+  console.log(`✅ Health check: http://localhost:${PORT}/api/health`);
+});
 
-startServer();
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Rejection:', err);
+});

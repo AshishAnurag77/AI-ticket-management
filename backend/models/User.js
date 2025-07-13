@@ -1,6 +1,4 @@
-import mongoose from "mongoose";
-
-// Create a simple in-memory store for demo purposes
+// Simple in-memory store for demo purposes
 const users = [];
 let userIdCounter = 1;
 
@@ -11,7 +9,10 @@ const User = {
       return users.find(user => user.email === query.email);
     }
     if (query._id) {
-      return users.find(user => user._id === query._id);
+      return users.find(user => user._id == query._id);
+    }
+    if (query.role) {
+      return users.find(user => user.role === query.role || (query.role.$in && query.role.$in.includes(user.role)));
     }
     return null;
   },
@@ -19,6 +20,8 @@ const User = {
   async create(userData) {
     const user = {
       _id: userIdCounter++,
+      role: 'user',
+      skills: [],
       ...userData,
       createdAt: new Date(),
       updatedAt: new Date()
@@ -57,27 +60,3 @@ const User = {
 };
 
 export default User;
-
-/* Original Mongoose schema - commented out for demo
-const userSchema = new mongoose.Schema({
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-  },
-  password: {
-    type: String,
-    required: true,
-  },
-  role: {
-    type: String,
-    enum: ["user", "moderator", "admin"],
-    default: "user",
-  },
-  skills: {
-    type: [String],
-    default: [],
-  },
-}, {
-  timestamps: true,
-});
