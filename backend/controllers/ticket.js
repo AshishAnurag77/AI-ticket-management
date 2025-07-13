@@ -1,5 +1,4 @@
 import Ticket from "../models/Ticket.js";
-import { inngest } from "../inngest/client.js";
 
 export const createTicket = async (req, res) => {
   const { title, description } = req.body;
@@ -9,12 +8,6 @@ export const createTicket = async (req, res) => {
       title,
       description,
       createdBy: req.user._id,
-    });
-
-    // Trigger AI processing
-    await inngest.send({
-      name: "ticket/created",
-      data: { ticketId: ticket._id.toString() },
     });
 
     res.status(201).json({

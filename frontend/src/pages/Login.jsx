@@ -29,6 +29,7 @@ function Login({ setUser }) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         setUser(data.user);
+        // User will be automatically redirected to dashboard by App.jsx
       } else {
         setError(data.message);
       }
