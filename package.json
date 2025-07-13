@@ -10,7 +10,7 @@
     "backend:inngest": "cd backend && npm run inngest-dev",
     "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
     "build": "cd frontend && npm run build",
-    "start": "node backend/index.js",
+    "start": "cd backend && node index.js",
     "frontend:start": "cd frontend && npm run dev"
   },
   "keywords": ["ai", "ticket", "management", "inngest", "react"],
